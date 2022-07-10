@@ -2,8 +2,6 @@ import tensorflow as tf
 
 
 class DoubleConvModule(tf.keras.layers.Layer):
-
-
     def __init__(self, filters, mid_channels=None):
         super(DoubleConvModule, self).__init__()
         if not mid_channels:
@@ -36,8 +34,6 @@ class DoubleConvModule(tf.keras.layers.Layer):
 
 
 class Downscale(tf.keras.layers.Layer):
-
-
     def __init__(self, filters):
         super(Downscale, self).__init__()
         self.mp2d_1 = tf.keras.layers.MaxPool2D(pool_size=(2,2))
@@ -49,8 +45,6 @@ class Downscale(tf.keras.layers.Layer):
 
 
 class Upscale(tf.keras.layers.Layer):
-
-
     def __init__(self, filters, bilinear=False):
         super().__init__()
         self.filters = filters
@@ -65,17 +59,16 @@ class Upscale(tf.keras.layers.Layer):
     def call(self, input_tensor, skip_connection):
         x1 = self.upsample(input_tensor)
         x2 = skip_connection
-        x2 = tf.image.random_crop(x2, size=(x2.shape[0], x1.shape[1], x1.shape[2], self.filters))
+        x2 = tf.image.resize(x2, size=[x1.shape[1], x1.shape[2]])
         x = tf.keras.layers.Concatenate()([x1, x2])
         return self.doubleconv(x)
 
 
 class ClassifyConv(tf.keras.layers.Layer):
-
-    
     def __init__(self, filters):
         super(ClassifyConv, self).__init__()
         self.conv = tf.keras.layers.Conv2D(filters, kernel_size=(1,1))
     
-    def call(self, input_tensor):
-        return self.conv(input_tensor)
+    def call(self, input_tensor, original_size):
+        x = tf.image.resize(input_tensor, original_size)
+        return self.conv(x)
