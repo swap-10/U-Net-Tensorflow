@@ -1,4 +1,6 @@
 import tensorflow as tf
+import tensorflow_datasets as  tfds
+from PIL import Image
 from unet import UNet
 from pathlib import Path
 import argparse
@@ -33,6 +35,7 @@ def get_args():
     parser.add_argument("--n_classes", "-nc", type=int, default=2, help="Number of classes")
     parser.add_argument("--mask_suffix", "-ms", type=str, default="", help="Mask image names of the form: 'image_name_mask.ext")
     parser.add_argument("--bilinear", "-bi", type=bool, default=False, help="True: use bilinear upsampling; False: Use Conv2DTranspose. Default: False")
+    parser.add_argument("--tfds_dataset", "-tfds", type=str, default="", help="Specify key of tfds dataset to be used. If local dataset, don't use this option.")
         
 
 class EarlyStoppingCallback(tf.keras.callbacks.Callback):
@@ -44,26 +47,47 @@ class EarlyStoppingCallback(tf.keras.callbacks.Callback):
 
 if __name__ == "__main__":
     args = get_args()
-    train_images_dir = Path("./data/train/images/")
-    train_masks_dir = Path("./data/train/masks/")
+    if args.tfds_dataset == "":
+        train_images_dir = Path("./data/train/images/")
+        train_masks_dir = Path("./data/train/masks/")
 
-    test_images_dir = Path("./data/train/images/")
-    test_masks_dir = Path("./data/train/masks/")
+        test_images_dir = Path("./data/train/images/")
+        test_masks_dir = Path("./data/train/masks/")
 
-    train_dataset = create_dataset(
-        train_images_dir,
-        train_masks_dir,
-        mask_suffix=args.mask_suffix,
-        batch_size=args.batch_size
-        )
+        train_dataset = create_dataset(
+            train_images_dir,
+            train_masks_dir,
+            mask_suffix=args.mask_suffix,
+            batch_size=args.batch_size
+            )
 
-    test_dataset = create_dataset(
-        test_images_dir,
-        test_masks_dir,
-        mask_suffix=args.mask_suffix,
-        batch_size=args.batch_size
-        )
+        test_dataset = create_dataset(
+            test_images_dir,
+            test_masks_dir,
+            mask_suffix=args.mask_suffix,
+            batch_size=args.batch_size
+            )
+    else:
+        dataset, info = tfds.load(args.tfds_dataset, with_info=True)
 
+        def normalize(input_image, input_mask):
+            input_image = tf.cast(input_image, tf.float32) / 255.0
+            input_mask = input_mask - 1
+            return input_image, input_mask
+
+        def load_image(data):
+            input_image = tf.image.resize(data['image'], (572, 572))
+            input_mask = tf.image.resize(data['segmentation_mask'], (572, 572))
+
+            input_image, input_mask = normalize(input_image, input_mask)
+
+            return input_image, input_mask
+        
+        train_dataset = dataset['train'].batch(args.batch_size).map(load_image)
+        test_dataset = dataset['test'].batch(args.batch_size).map(load_image)
+
+    for num, image, mask in enumerate(train_dataset.take(3)):
+        Image.save(f"sample_image_{num}.jpg")
 
     model = UNet(n_channels=3, n_classes=args.n_classes, bilinear=args.bilinear)
     model.compile(
