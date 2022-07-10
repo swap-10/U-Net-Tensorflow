@@ -1,5 +1,6 @@
 import tensorflow as tf
 import tensorflow_datasets as  tfds
+import numpy as np
 from PIL import Image
 from unet import UNet
 from pathlib import Path
@@ -20,7 +21,7 @@ def preprocess(image_path, mask_path):
 
 def create_dataset(img_dir, masks_dir, mask_suffix="", batch_size=16):
     image_paths = list(Path.glob(img_dir, "[!.]*"))
-    mask_paths = list(Path.glob(masks_dir, "[!.]*"+mask_suffix + "*"))
+    mask_paths = list(Path.glob(masks_dir, "[!.]*"+mask_suffix + ".*"))
     dataset = tf.data.Dataset.from_tensor_slices((image_paths, mask_paths))
     dataset = dataset.batch(batch_size=batch_size)
     dataset = dataset.map(preprocess)
@@ -37,6 +38,7 @@ def get_args():
     parser.add_argument("--bilinear", "-bi", type=bool, default=False, help="True: use bilinear upsampling; False: Use Conv2DTranspose. Default: False")
     parser.add_argument("--tfds_dataset", "-tfds", type=str, default="", help="Specify key of tfds dataset to be used. If local dataset, don't use this option.")
         
+    return parser.parse_args()
 
 class EarlyStoppingCallback(tf.keras.callbacks.Callback):
   def on_epoch_end(self, epoch, logs=None):
@@ -76,8 +78,8 @@ if __name__ == "__main__":
             return input_image, input_mask
 
         def load_image(data):
-            input_image = tf.image.resize(data['image'], (572, 572))
-            input_mask = tf.image.resize(data['segmentation_mask'], (572, 572))
+            input_image = tf.image.resize(data['image'], (256, 256))
+            input_mask = tf.image.resize(data['segmentation_mask'], (256, 256))
 
             input_image, input_mask = normalize(input_image, input_mask)
 
@@ -86,10 +88,14 @@ if __name__ == "__main__":
         train_dataset = dataset['train'].batch(args.batch_size).map(load_image)
         test_dataset = dataset['test'].batch(args.batch_size).map(load_image)
 
-    for num, image, mask in enumerate(train_dataset.take(3)):
-        Image.save(f"sample_image_{num}.jpg")
+    for num, (image, mask) in enumerate(train_dataset.take(3)):
+      print(image.shape)
+      image = image * 255
+      image = np.array(image, dtype=np.uint8)
+      image = Image.fromarray(image[0])
+      image.save(f"sample_image_1.jpg")
 
-    model = UNet(n_channels=3, n_classes=args.n_classes, bilinear=args.bilinear)
+    model = UNet(n_channels=3, n_classes=args.n_classes, training=True, bilinear=args.bilinear)
     model.compile(
         optimizer=tf.keras.optimizers.Adam(),
         loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
