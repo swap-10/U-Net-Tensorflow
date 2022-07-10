@@ -72,7 +72,7 @@ if __name__ == "__main__":
         )
     early_stopping_callback = EarlyStoppingCallback()
     model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
-        filepath="./",
+        filepath="./saved_model.h5",
         save_weights_only=False,
         monitor='val_accuracy',
         mode='max',
