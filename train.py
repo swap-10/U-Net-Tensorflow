@@ -13,6 +13,7 @@ def preprocess(image_path, mask_path):
     mask = read_image(mask_path)
     image = tf.image.resize(image, [256, 256])
     mask = tf.image.resize(mask, [256, 256])
+    image = tf.cast(image, tf.float32) / 255.0
     return image, mask
 
 def create_dataset(img_dir, masks_dir, mask_suffix="", batch_size=16):
