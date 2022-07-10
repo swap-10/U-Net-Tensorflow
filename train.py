@@ -90,10 +90,11 @@ if __name__ == "__main__":
 
     for num, (image, mask) in enumerate(train_dataset.take(3)):
       print(image.shape)
-      image = image * 255
-      image = np.array(image, dtype=np.uint8)
-      image = Image.fromarray(image[0])
-      image.save(f"sample_image_1.jpg")
+      sample_image = image[0]
+      sample_image = sample_image * 255
+      sample_image = np.array(sample_image, dtype=np.uint8)
+      sample_image = Image.fromarray(sample_image)
+      sample_image.save(f"sample_image_{num}.jpg")
 
     model = UNet(n_channels=3, n_classes=args.n_classes, training=True, bilinear=args.bilinear)
     model.compile(
