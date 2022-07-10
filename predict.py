@@ -51,14 +51,16 @@ def get_args():
     parser = argparse.ArgumentParser(description="Predictions of image segmentation")
     parser.add_argument("--image_path", "-path", type=str, default="use_default", help="Specify image path to run inference on. If unused, one of sample_image_num will be used.")
     parser.add_argument("--out_threshold", "-th", type=float, default=0.5, help="Specify the threshold for prediction.")
+    parser.add_argument("--n_classes", "-th", type=int, default=2, help="Number of classes")
     
-
+    return parser.parse_args()
 
 
 def predict_img(img_path, out_threshold=0.5):
     img = preprocess(img_path)
-    model = tf.keras.models.load_model('saved_model.h5')
-
+    model = UNet(n_channels=3, n_classes=args.n_classes, training=False, bilinear=args.bilinear)
+    model.build((None, img.shape[0], img.shape[1], img.shape[2]))
+    model.load_weights("./saved_model.ckpt")
     show_predictions(model, img)
 
 if __name__ == "__main__":
