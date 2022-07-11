@@ -33,7 +33,7 @@ def get_args():
     parser.add_argument("--epochs", "-e", type=int, default=5, help="Number of epochs")
     parser.add_argument("--batch_size", "-b", type=int, default=1, help="Batch size")
     parser.add_argument("--learning_rate", "-lr", dest="lr", type=float, default=1e-5, help="Learning Rate")
-    parser.add_argument("--n_classes", "-nc", type=int, default=2, help="Number of classes")
+    parser.add_argument("--n_classes", "-nc", type=int, default=3, help="Number of classes")
     parser.add_argument("--mask_suffix", "-ms", type=str, default="", help="Mask image names of the form: 'image_name_mask.ext")
     parser.add_argument("--bilinear", "-bi", type=bool, default=False, help="True: use bilinear upsampling; False: Use Conv2DTranspose. Default: False")
     parser.add_argument("--tfds_dataset", "-tfds", type=str, default="", help="Specify key of tfds dataset to be used. If local dataset, don't use this option.")
@@ -104,7 +104,7 @@ if __name__ == "__main__":
         )
     early_stopping_callback = EarlyStoppingCallback()
     model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
-        filepath="./saved_model.ckpt",
+        filepath="./saved_model.h5",
         save_weights_only=True,
         monitor='val_accuracy',
         mode='max',
