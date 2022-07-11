@@ -8,7 +8,8 @@ import argparse
 
 def read_image(image_path: Path):
     image = tf.io.read_file(image_path)
-    image = tf.image.decode_jpeg(image, channels=3, dtype=tf.float32)
+    image = tf.image.decode_jpeg(image, channels=3)
+    image = tf.image.convert_image_dtype(image, dtype=tf.float16)
     return image
 
 def preprocess(image_path, mask_path):
