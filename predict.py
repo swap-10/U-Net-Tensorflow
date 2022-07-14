@@ -14,7 +14,7 @@ from unet import UNet
 def read_image(image_path: Path):
     image = tf.io.read_file(image_path)
     image = tf.image.decode_jpeg(image, channels=3)
-    image = tf.image.convert_image_dtype(image, dtype=tf.float16)
+    image = tf.image.convert_image_dtype(image, dtype=tf.float32)
     return image
 
 def create_mask(pred_mask):
@@ -29,12 +29,12 @@ def display(img_list):
   for i in range(len(img_list)):
     plt.subplot(1, len(img_list), i+1)
     plt.title(title[i])
-    plt.imshow(tf.keras.utils.array_to_img(img_list[i]))
+    plt.imshow(tf.keras.utils.array_to_img(img_list[i]), cmap="gray")
     plt.axis('off')
   plt.show()
 
 def show_predictions(model, image):
-    image = image[..., tf.newaxis]
+    image = image[tf.newaxis, ...]
     pred_mask = model.predict(image)
     display([image[0], create_mask(pred_mask)])
 
@@ -45,7 +45,6 @@ def preprocess(image_path="use_default"):
         image_path = f"sample_image_{num}.jpg"
     image = read_image(image_path)
     image = tf.image.resize(image, [256, 256])
-    image = tf.cast(image, tf.float32)
     return image
 
 def get_args():
